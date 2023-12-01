@@ -1,10 +1,10 @@
-import logo from './logo.svg';
 import './App.css';
 
 const clientId = "5ce1937c472e49ff980b2daf69f969cc"; // Replace with your client ID
 const params = new URLSearchParams(window.location.search);
 const code = params.get("code");
 var profile;
+var songs;
 
 if (!code) {
   redirectToAuthCodeFlow(clientId);
@@ -13,19 +13,41 @@ if (!code) {
   console.log(accessToken);
   profile = await fetchProfile(accessToken);
   console.log(profile);
-  const playlists = await fetchPlaylists(accessToken)
-  console.log(playlists)
-  
+  const playlists = await fetchPlaylists(accessToken);
+  console.log(playlists);
+  songs = await getDiff(playlists, accessToken);
+  console.log(songs);
 
-  
 }
 
 function App() {
+  const renderSongs = () => {
+    console.log('getting here');
+    return songs.map(element => (
+      <div key={element}>
+        {element}
+      </div>
+    ))
+    // songs.forEach(element => {
+    //   <div>
+    //     Hello!
+    //     {element}
+    //   </div>
+    // });
+    // return songs.map(artist => (
+    //     <div key={artist.id}>
+    //         {artist.images.length ? <img width={"100%"} src={artist.images[0].url} alt=""/> : <div>No Image</div>}
+    //         {artist.name}
+    //     </div>
+    // ))
+  }
   return (
     <div className="App">
     <header className="App-header">
         <h1>Spotify React</h1>
         <p>{profile.display_name}</p>
+        {renderSongs()}
+        
     </header>
 </div>
   );
@@ -136,6 +158,34 @@ async function fetchPlaylists(token) {
   } 
 
   return {'2023': playlist_2023_id, '2022': playlist_2022_id}
+}
+
+async function getDiff(playlists, token){
+  var url = `https://api.spotify.com/v1/playlists/${playlists['2023']}/tracks?fields=items(track(name,artists(name)))`
+  var songs = []
+  var result = await fetch(url, {
+    method: "GET", headers: {Authorization: `Bearer ${token}`}
+  });
+
+  var response = await result.json();
+  response.items.forEach(element => {
+    songs.push(`${element.track.name} - ${element.track.artists[0].name}`)
+  });
+
+  url = `https://api.spotify.com/v1/playlists/${playlists['2022']}/tracks?fields=items(track(name,artists(name)))`
+  var songs_overlap = []
+  result = await fetch(url, {
+    method: "GET", headers: {Authorization: `Bearer ${token}`}
+  });
+  response = await result.json();
+  response.items.forEach(element => {
+    if(songs.includes(`${element.track.name} - ${element.track.artists[0].name}`)){
+      songs_overlap.push(`${element.track.name} - ${element.track.artists[0].name}`);
+    }
+  });
+
+  return songs_overlap;
+
 }
 
 export default App;
