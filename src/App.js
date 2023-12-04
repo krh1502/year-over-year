@@ -10,7 +10,7 @@ function App() {
   const [profile, setProfile] = useState({})
   const [songs, setSongs] = useState([])
 
-  useEffect(async () => {
+  useEffect(() => {
     const hash = window.location.hash
     let token = window.localStorage.getItem("token")
 
@@ -22,14 +22,20 @@ function App() {
     }
 
     setToken(token)
+    async function fetchData(){
+      const result = await fetch("https://api.spotify.com/v1/me", {
+        method: "GET", headers: { Authorization: `Bearer ${token}` }
+      });
 
-    const result = await fetch("https://api.spotify.com/v1/me", {
-      method: "GET", headers: { Authorization: `Bearer ${token}` }
-    });
+      setProfile(await result.json());
+      const playlists = await fetchPlaylists(token);
+      if(playlists['2022'] == null || playlists['2023'] == null){
+        setSongs(null)
+      }
+      setSongs(await getDiff(playlists, token));
+    }
 
-    setProfile(await result.json());
-    const playlists = await fetchPlaylists(token);
-    setSongs(await getDiff(playlists, token));
+    fetchData();
 
   }, [])
 
@@ -56,7 +62,15 @@ function App() {
         {!token ?
         <a href={`${AUTH_ENDPOINT}?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=${RESPONSE_TYPE}&scope=user-read-private,user-read-email,playlist-read-private,playlist-read-collaborative`}>Login to Spotify</a>
         : <p>Profile: {profile.display_name}</p>}
-        <ul>{renderSongs()}</ul>
+        
+        {token && !songs ?
+          <ul>
+            <p>Looks like you're missing your 2023 and/or 2022 Top Songs Playlist(s). Add them to your library:</p>
+            <p><a href="https://open.spotify.com/playlist/37i9dQZF1Fa1IIVtEpGUcU?si=8a8b251ae72546fb">2023 Playlist</a></p>
+            <p><a href="https://open.spotify.com/playlist/37i9dQZF1F0sijgNaJdgit?si=d2dce6c5e8c94892">2022 Playlist</a></p>
+          </ul> : 
+          <ul>{renderSongs()}</ul>
+        }
         {/* {profile ? renderSongs() : <p></p>} */}
         <button onClick={logout}>Logout</button>
         
@@ -70,42 +84,34 @@ async function fetchPlaylists(token) {
     method: "GET", headers: {Authorization: `Bearer ${token}`}
   });
 
-  var playlist_2023_id = "";
-  var playlist_2022_id = "";
-
-
   var res = await result.json();
-  while(playlist_2023_id == "" || playlist_2022_id == ""){
-    console.log("while loop once");
-    res.items.forEach(element => {
-      console.log(element.name)
-      if(element.name == "Your Top Songs 2023" && element.owner.id == "spotify"){
-        playlist_2023_id = element.id;
-      }
-      if(element.name == "Your Top Songs 2022" && element.owner.id == "spotify"){
-        playlist_2022_id = element.id;
-      }
-    });
-    console.log(res.next);
-    if((playlist_2023_id == "" || playlist_2022_id == "") && res.next != null){
-      result = await fetch(res.next, {
-      method: "GET", headers: {Authorization: `Bearer ${token}`}
-      });
-      res = await result.json();
-      console.log(res);
-    } else if((playlist_2023_id == "" || playlist_2022_id == "") && res.next == null){
-      break;
-    }
+  let playlists = {};
+  for(let i=0;i<res.items.length;i++){
+    playlists[res.items[i].name] = res.items[i].id
   }
 
-  if(playlist_2023_id == "" || playlist_2022_id == ""){
-    console.log("Missing 2023 and/or 2022 top songs playlist(s). Make sure to save these to your Spotify library.")
-  } 
+  if(playlists["Your Top Songs 2023"] && playlists["Your Top Songs 2022"]){
+    return {'2023': playlists["Your Top Songs 2023"], '2022': playlists["Your Top Songs 2022"]}
+  }
 
-  return {'2023': playlist_2023_id, '2022': playlist_2022_id}
+  while(res.next) {
+    result = await fetch(res.next, {
+      method: "GET", headers: {Authorization: `Bearer ${token}`}
+    });
+    res = await result.json();
+    for(let i=0;i<res.items.length;i++){
+      playlists[res.items[i].name] = res.items[i].id
+    }
+    if(playlists["Your Top Songs 2023"] && playlists["Your Top Songs 2022"]){
+      return {'2023': playlists["Your Top Songs 2023"], '2022': playlists["Your Top Songs 2022"]}
+    }
+  }
+  console.log("Missing 2023 and/or 2022 top songs playlist(s). Make sure to save these to your Spotify library.")
+  return {'2023': null, '2022': null}
 }
 
 async function getDiff(playlists, token){
+  if(playlists['2023'])
   var url = `https://api.spotify.com/v1/playlists/${playlists['2023']}/tracks?fields=items(track(name,artists(name)))`
   var songs = []
   var result = await fetch(url, {
@@ -128,8 +134,6 @@ async function getDiff(playlists, token){
       songs_overlap.push(`${element.track.name} - ${element.track.artists[0].name}`);
     }
   });
-  console.log("here");
-  console.log(songs_overlap);
 
   return songs_overlap;
 
