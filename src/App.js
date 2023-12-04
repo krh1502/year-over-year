@@ -1,25 +1,6 @@
 import './App.css';
 import {useEffect, useState} from 'react';
 
-const clientId = "5ce1937c472e49ff980b2daf69f969cc"; // Replace with your client ID
-const params = new URLSearchParams(window.location.search);
-const code = params.get("code");
-//var profile;
-// var songs;
-
-// if (!code) {
-//   redirectToAuthCodeFlow(clientId);
-// } else {
-//   const accessToken = await getAccessToken(clientId, code);
-//   console.log(accessToken);
-//   profile = await fetchProfile(accessToken);
-//   console.log(profile);
-//   const playlists = await fetchPlaylists(accessToken);
-//   console.log(playlists);
-//   songs = await getDiff(playlists, accessToken);
-//   console.log(songs);
-// }
-
 function App() {
   const CLIENT_ID = "5ce1937c472e49ff980b2daf69f969cc"
   const REDIRECT_URI = "https://year-over-year.web.app/"
