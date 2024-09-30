@@ -3,16 +3,24 @@ import {useEffect, useState} from 'react';
 
 function App() {
   const CLIENT_ID = "5ce1937c472e49ff980b2daf69f969cc"
-  const REDIRECT_URI = "https://year-over-year.web.app/"
+  const REDIRECT_URI = process.env.REACT_APP_REDIRECT_URI
   const AUTH_ENDPOINT = "https://accounts.spotify.com/authorize"
   const RESPONSE_TYPE = "token"
   const [token, setToken] = useState("")
   const [profile, setProfile] = useState({})
   const [songs, setSongs] = useState([])
+  const [years, setYears] = useState({})
+  const [selectedYearOne, setSelectedYearOne] = useState("")
+  const [selectedYearTwo, setSelectedYearTwo] = useState("")
 
   useEffect(() => {
+    
     const hash = window.location.hash
     let token = window.localStorage.getItem("token")
+    console.log("here: "+token)
+    if(!token){
+      window.location.href = `${AUTH_ENDPOINT}?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=${RESPONSE_TYPE}&scope=user-read-private,user-read-email,playlist-read-private,playlist-read-collaborative`
+    }
 
     if (!token && hash) {
         token = hash.substring(1).split("&").find(elem => elem.startsWith("access_token")).split("=")[1]
@@ -28,11 +36,21 @@ function App() {
       });
 
       setProfile(await result.json());
-      const playlists = await fetchPlaylists(token);
-      if(playlists['2022'] == null || playlists['2023'] == null){
-        setSongs(null)
+      //const playlists = await fetchPlaylists(token);
+      setYears(await fetchYears(token))
+      console.log(years)
+      setSelectedYearOne(Object.keys(years)[0])
+      setSelectedYearTwo(Object.keys(years)[1])
+      // if(playlists['2022'] == null || playlists['2023'] == null){
+      //   setSongs(null)
+      // }
+      // setSongs(await getDiff(playlists, token));
+      let playlists = [years[selectedYearOne], years[selectedYearTwo]]
+      console.log(playlists)
+      if(playlists[0] && playlists[1]){
+        setSongs(await getDiffOptions(playlists, token))
       }
-      setSongs(await getDiff(playlists, token));
+      
     }
 
     fetchData();
@@ -54,14 +72,52 @@ function App() {
     setProfile({})
   }
 
+  const yearOptions = () => {
+    return Object.keys(years).map(element => (
+      <option>
+        {element}
+      </option>
+    ))
+  }
+
+  const yearUpdate = async (year, option) => {
+    console.log(option)
+    if(year === 0){
+      console.log("Here!!")
+      setSelectedYearOne(option)
+    } else {
+      setSelectedYearTwo(option)
+    }
+    console.log("Year one " + selectedYearOne)
+    console.log("Year two " +selectedYearTwo)
+    let playlists = [years[selectedYearOne], years[selectedYearTwo]]
+    console.log(playlists)
+    setSongs(await getDiffOptions(playlists, token))
+  }
+
   return (
     <div className="App">
     <header className="App-header">
         <h1>Year Over Year</h1>
         <p>See what songs made your top 100 songs playlists in both 2022 and 2023!</p>
-        {!token ?
+        {!token || token === "" ?
         <a href={`${AUTH_ENDPOINT}?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=${RESPONSE_TYPE}&scope=user-read-private,user-read-email,playlist-read-private,playlist-read-collaborative`}>Login to Spotify</a>
         : <p>Profile: {profile.display_name}</p>}
+
+        <select
+          value={selectedYearOne}
+          onChange={e => yearUpdate(0, e.target.value)}>
+          {yearOptions()}
+        </select>
+        <select
+          value={selectedYearTwo}
+          onChange={e => yearUpdate(1, e.target.value)}>
+          {yearOptions()}
+        </select>
+
+        {/* <button onClick={}>
+          Get my comparison!
+        </button> */}
         
         {token && !songs ?
           <ul>
@@ -77,6 +133,32 @@ function App() {
     </header>
 </div>
   );
+}
+
+async function fetchYears(token) {
+  var result = await fetch("https://api.spotify.com/v1/me/playlists?limit=50&offset=0", {
+    method: "GET", headers: {Authorization: `Bearer ${token}`}
+  });
+
+  var res = await result.json();
+  let years = {}
+  for(let i=0;i<res.items.length;i++){
+    if(res.items[i].name.startsWith("Your Top Songs") && res.items[i].owner.id === "spotify"){
+      years[res.items[i].name] = res.items[i].id
+    }
+  }
+  while(res.next) {
+    result = await fetch(res.next, {
+      method: "GET", headers: {Authorization: `Bearer ${token}`}
+    });
+    res = await result.json();
+    for(let i=0;i<res.items.length;i++){
+      if(res.items[i].name.startsWith("Your Top Songs") && res.items[i].owner.id === "spotify"){
+        years[res.items[i].name] = res.items[i].id
+      }
+    }
+  }
+  return years
 }
 
 async function fetchPlaylists(token) {
@@ -95,6 +177,7 @@ async function fetchPlaylists(token) {
   }
 
   while(res.next) {
+    console.log(res.next)
     result = await fetch(res.next, {
       method: "GET", headers: {Authorization: `Bearer ${token}`}
     });
@@ -111,7 +194,6 @@ async function fetchPlaylists(token) {
 }
 
 async function getDiff(playlists, token){
-  if(playlists['2023'])
   var url = `https://api.spotify.com/v1/playlists/${playlists['2023']}/tracks?fields=items(track(name,artists(name)))`
   var songs = []
   var result = await fetch(url, {
@@ -139,4 +221,32 @@ async function getDiff(playlists, token){
 
 }
 
+async function getDiffOptions(playlists, token){
+
+  var url = `https://api.spotify.com/v1/playlists/${playlists[0]}/tracks?fields=items(track(name,artists(name)))`
+  var songs = []
+  var result = await fetch(url, {
+    method: "GET", headers: {Authorization: `Bearer ${token}`}
+  });
+
+  var response = await result.json();
+  response.items.forEach(element => {
+    songs.push(`${element.track.name} - ${element.track.artists[0].name}`)
+  });
+
+  url = `https://api.spotify.com/v1/playlists/${playlists[1]}/tracks?fields=items(track(name,artists(name)))`
+  var songs_overlap = []
+  result = await fetch(url, {
+    method: "GET", headers: {Authorization: `Bearer ${token}`}
+  });
+  response = await result.json();
+  response.items.forEach(element => {
+    if(songs.includes(`${element.track.name} - ${element.track.artists[0].name}`)){
+      songs_overlap.push(`${element.track.name} - ${element.track.artists[0].name}`);
+    }
+  });
+
+  return songs_overlap;
+
+}
 export default App;
