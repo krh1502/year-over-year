@@ -113,7 +113,6 @@ function App() {
         }
 
         
-        
         {token && !songs ?
           <ul>
             <p>Looks like you're missing your 2023 and/or 2022 Top Songs Playlist(s). Add them to your library:</p>
@@ -145,6 +144,7 @@ async function fetchYears(token) {
       years[res.items[i].name] = res.items[i].id
     }
   }
+
   while(res.next) {
     result = await fetch(res.next, {
       method: "GET", headers: {Authorization: `Bearer ${token}`}
