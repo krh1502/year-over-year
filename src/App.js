@@ -3,7 +3,7 @@ import {useEffect, useState} from 'react';
 
 function App() {
   const CLIENT_ID = "5ce1937c472e49ff980b2daf69f969cc"
-  const REDIRECT_URI = process.env.REACT_APP_REDIRECT_URI
+  const REDIRECT_URI = "https://year-over-year.web.app/"
   const AUTH_ENDPOINT = "https://accounts.spotify.com/authorize"
   const RESPONSE_TYPE = "token"
   const [token, setToken] = useState("")
