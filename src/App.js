@@ -16,7 +16,7 @@ function App() {
     
     const hash = window.location.hash
     let token = window.localStorage.getItem("token")
-    console.log("here: "+token)
+   //console.log("here: "+token)
     if(!token){
       window.location.href = `${AUTH_ENDPOINT}?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=${RESPONSE_TYPE}&scope=user-read-private,user-read-email,playlist-read-private,playlist-read-collaborative`
     }
@@ -140,6 +140,9 @@ async function fetchYears(token) {
   console.log(res.items)
   let years = {}
   for(let i=0;i<res.items.length;i++){
+    if(res.items[i] == null){
+      continue
+    }
     if(res.items[i].name.startsWith("Your Top Songs") && res.items[i].owner.id === "spotify"){
       years[res.items[i].name] = res.items[i].id
     }
@@ -151,6 +154,9 @@ async function fetchYears(token) {
     });
     res = await result.json();
     for(let i=0;i<res.items.length;i++){
+      if(res.items[i] == null){
+        continue
+      }
       if(res.items[i].name.startsWith("Your Top Songs") && res.items[i].owner.id === "spotify"){
         years[res.items[i].name] = res.items[i].id
       }
