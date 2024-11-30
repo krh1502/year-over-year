@@ -143,7 +143,7 @@ async function fetchYears(token) {
     if(res.items[i] == null){
       continue
     }
-    if(res.items[i].name.startsWith("Your Top Songs") && res.items[i].owner.id === "spotify"){
+    if(res.items[i].name.startsWith("Your Top Songs")){
       years[res.items[i].name] = res.items[i].id
     }
   }
@@ -157,7 +157,7 @@ async function fetchYears(token) {
       if(res.items[i] == null){
         continue
       }
-      if(res.items[i].name.startsWith("Your Top Songs") && res.items[i].owner.id === "spotify"){
+      if(res.items[i].name.startsWith("Your Top Songs")){
         years[res.items[i].name] = res.items[i].id
       }
     }
