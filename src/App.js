@@ -16,7 +16,6 @@ function App() {
     
     const hash = window.location.hash
     let token = window.localStorage.getItem("token")
-    console.log("here: "+token)
     if(!token){
       window.location.href = `${AUTH_ENDPOINT}?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=${RESPONSE_TYPE}&scope=user-read-private,user-read-email,playlist-read-private,playlist-read-collaborative`
     }
@@ -39,14 +38,16 @@ function App() {
       
     }
 
-    fetchData();
+    fetchData()
 
   }, [])
 
   const renderSongs = () => {
+    console.log(songs)
     return songs.map(element => (
-      <div key={element}>
-        {element}
+      
+      <div key={element.name}>
+        {element.name} - {element.artists[0].name}
       </div>
     ))
   }
@@ -81,6 +82,7 @@ function App() {
   const updatePlaylists = async () =>{
     console.log(selectedYears)
     setSongs(await getDiffOptions(selectedYears, token))
+    console.log("years")
   }
 
   return (
@@ -137,9 +139,13 @@ async function fetchYears(token) {
   });
 
   var res = await result.json();
+  console.log("hello")
   console.log(res.items)
   let years = {}
   for(let i=0;i<res.items.length;i++){
+    if(res.items[i] == null){
+      continue
+    }
     if(res.items[i].name.startsWith("Your Top Songs") && res.items[i].owner.id === "spotify"){
       years[res.items[i].name] = res.items[i].id
     }
@@ -155,6 +161,7 @@ async function fetchYears(token) {
         years[res.items[i].name] = res.items[i].id
       }
     }
+
   }
   return years
 }
@@ -228,7 +235,8 @@ async function getDiffOptions(playlists, token){
 
   var response = await result.json();
   response.items.forEach(element => {
-    songs.push(`${element.track.name} - ${element.track.artists[0].name}`)
+    //songs.push(`${element.track.name} - ${element.track.artists[0].name}`)
+    songs.push(element.track)
   });
 
   url = `https://api.spotify.com/v1/playlists/${playlists[1]}/tracks?fields=items(track(name,artists(name)))`
@@ -238,8 +246,11 @@ async function getDiffOptions(playlists, token){
   });
   response = await result.json();
   response.items.forEach(element => {
-    if(songs.includes(`${element.track.name} - ${element.track.artists[0].name}`)){
-      songs_overlap.push(`${element.track.name} - ${element.track.artists[0].name}`);
+    // if(songs.includes(`${element.track.name} - ${element.track.artists[0].name}`)){
+    //   songs_overlap.push(`${element.track.name} - ${element.track.artists[0].name}`);
+    // }
+    if(songs.includes(element.track)){
+      songs_overlap.push(element.track)
     }
   });
 
