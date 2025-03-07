@@ -1,5 +1,7 @@
 import './App.css';
 import { useEffect, useState } from 'react';
+import { collection, addDoc, getDocs, Timestamp, setDoc, doc } from 'firebase/firestore';
+import db from './firebase'
 
 function App() {
   const CLIENT_ID = "5ce1937c472e49ff980b2daf69f969cc"
@@ -33,8 +35,18 @@ function App() {
         method: "GET", headers: { Authorization: `Bearer ${token}` }
       });
 
-      setProfile(await result.json());
-      setYears(await fetchYears(token))
+      var res_json = await result.json()
+
+      setProfile(res_json);
+      try {
+        setDoc(doc(db, res_json['id'], "logins"), {
+          user: res_json,
+          lastLogin: Timestamp.now()
+        });
+      } catch (e) {
+        console.error("Error adding document: ", e);
+      }
+      setYears(await fetchYears(token, res_json['id']));
 
     }
 
@@ -139,9 +151,6 @@ function App() {
           <div></div>
         }
 
-
-
-
       </header>
       <footer class="App-footer">
         <p>Data from</p>
@@ -152,7 +161,7 @@ function App() {
   );
 }
 
-async function fetchYears(token) {
+async function fetchYears(token, user) {
   if (!token || token === "") {
     return {}
   }
@@ -160,12 +169,15 @@ async function fetchYears(token) {
     method: "GET", headers: { Authorization: `Bearer ${token}` }
   });
 
+  var playlistTitles = []
+
   var res = await result.json();
   let years = {}
   for (let i = 0; i < res.items.length; i++) {
     if (res.items[i] == null) {
       continue
     }
+    playlistTitles.push(res.items[i].name)
     if (res.items[i].name.startsWith("Your Top Songs")) {
       years[res.items[i].name] = res.items[i].id
     }
@@ -180,9 +192,17 @@ async function fetchYears(token) {
       if (res.items[i] == null) {
         continue
       }
+      playlistTitles.push(res.items[i].name)
       if (res.items[i].name.startsWith("Your Top Songs")) {
         years[res.items[i].name] = res.items[i].id
       }
+    }
+    try {
+      await setDoc(doc(db, user, "playlists"),{
+        playlists: playlistTitles
+      })
+    } catch (e) {
+      console.error("Error adding document: ", e);
     }
   }
   return years
