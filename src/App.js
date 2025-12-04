@@ -1,7 +1,8 @@
 import './App.css';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Timestamp, setDoc, doc } from 'firebase/firestore';
 import db from './firebase'
+
 
 function App() {
 
@@ -25,7 +26,6 @@ function App() {
     }
 
     const codeVerifier = generateRandomString(64);
-    console.log("code verifier generated:", codeVerifier)
 
     const sha256 = async (plain) => {
       const encoder = new TextEncoder()
@@ -47,7 +47,6 @@ function App() {
 
     // store verifier for the subsequent token-exchange step
     window.localStorage.setItem('code_verifier', codeVerifier);
-    console.log("code verifier saved to localStorage")
 
     const params = {
       response_type: 'code',
@@ -64,7 +63,7 @@ function App() {
   }
 
   // helper to exchange code for access token
-  async function exchangeCodeForAccessToken(code) {
+  const exchangeCodeForAccessToken = useCallback(async (code) =>{
     const codeVerifier = window.localStorage.getItem('code_verifier');
     if (!codeVerifier) {
       console.error('Missing code_verifier in localStorage');
@@ -103,7 +102,7 @@ function App() {
     }
     console.error('No access token in token response', json);
     return null;
-  }
+  }, [REDIRECT_URI]);
 
   useEffect(() => {
     (async () => {
@@ -170,7 +169,7 @@ function App() {
         console.error('Error fetching Spotify data:', err);
       }
     })();
-  }, [])
+  }, [REDIRECT_URI, exchangeCodeForAccessToken])
 
 
 
