@@ -2,6 +2,8 @@ import './App.css';
 import { useEffect, useState } from 'react';
 import { Timestamp, setDoc, doc } from 'firebase/firestore';
 import db from './firebase'
+import { Timestamp, setDoc, doc } from 'firebase/firestore';
+import db from './firebase'
 
 function App() {
 
@@ -291,7 +293,6 @@ function App() {
 }
 
 async function fetchYears(token, user) {
-  console.log("fetching years for user:", user)
   if (!token || token === "") {
     return {}
   }
