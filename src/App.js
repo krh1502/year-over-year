@@ -281,8 +281,9 @@ function App() {
 
       </header>
       <footer class="App-footer">
-        <p>Data from</p>
-        <img class="spotify-logo" src='Full_Logo_White_RGB.svg' alt="Spotify logo"></img>
+        <p class="spotify">Data from <img class="spotify-logo" src='Full_Logo_White_RGB.svg' alt="Spotify logo"></img></p>
+        <p>Made with ❤️☕️👩🏻‍💻 by Kate Halushka</p>
+        <p> Check out my source code on <a href="https://github.com/krh1502/year-over-year">Github</a></p>
 
       </footer>
     </div>

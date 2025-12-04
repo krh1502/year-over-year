@@ -1,3 +1,26 @@
+
+
+.roboto-condensed-yearoveryear {
+  font-family: "Roboto Condensed", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
+}
+
+h1 {
+  font-family: "Roboto Condensed", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 600;
+  font-style: normal;
+}
+
+p {
+  font-family: "Roboto Condensed", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
+}
+
 .App {
   text-align: center;
   display: flex;
@@ -11,6 +34,16 @@
 .App-logo {
   height: 40vmin;
   pointer-events: none;
+}
+
+
+.spotify {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  gap: 10px;
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -40,7 +73,7 @@
 .App-footer {
   background-color: #001021ff;
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   color: #ffffff;
@@ -65,6 +98,7 @@
 
 a {
   text-decoration: none;
+  color: #f2dda4ff;
 }
 
 .textarea {
